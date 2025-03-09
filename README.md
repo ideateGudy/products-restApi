@@ -1,4 +1,4 @@
-# RESTful API for a Product Resource
+# RESTful API for a Product Resource using nodeJs/Express
 
 ## This APIs should be able to:
 
