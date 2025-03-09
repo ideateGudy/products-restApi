@@ -6,7 +6,12 @@ const getAllProducts = (req, res) => {
   let filteredProduct = products;
 
   if (name) {
-    filteredProduct = products.filter((product) => product.name === name);
+    filteredProduct = products.filter((product) => {
+      const productName = product.name.toLowerCase();
+      const queryName = name.toLowerCase();
+      return productName.includes(queryName);
+      // return product.name.includes(name);
+    });
     // console.log(filteredProduct, "name");
   }
 
@@ -18,7 +23,12 @@ const getAllProducts = (req, res) => {
   const response = {
     success: true,
     message: "Products Fetch Successfull",
-    data: { products: filteredProduct },
+    [filteredProduct.length <= 1
+      ? "totalNumberOfProduct"
+      : "totalNumberOfProducts"]: filteredProduct.length,
+    data: {
+      [filteredProduct.length <= 1 ? "product" : "products"]: filteredProduct,
+    },
   };
   return res.status(200).send(response);
 };
@@ -63,7 +73,7 @@ const createProduct = (req, res) => {
   const response = {
     success: true,
     message: "Product Created Successfully",
-    data: { products: newProduct },
+    data: { product: newProduct },
   };
 
   res.status(201).send(response);

@@ -1,4 +1,2 @@
-//gitignore file
 node_modules
-dist
 .vscode
