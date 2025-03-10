@@ -2,6 +2,20 @@ const products = require("../products");
 
 // ---------------- Get All Products Available ----------------------------
 const getAllProducts = (req, res) => {
+  const allowedQueries = ["name", "limit"];
+  const queryKeys = Object.keys(req.query);
+
+  const invalidQueries = queryKeys.filter(
+    (key) => !allowedQueries.includes(key)
+  );
+  if (invalidQueries.length > 0) {
+    const response = {
+      success: false,
+      message: `Invalid query parameter(s): ${invalidQueries.join(", ")}`,
+      allowedParams: allowedQueries,
+    };
+    return res.status(400).send(response);
+  }
   const { name, limit } = req.query;
   let filteredProduct = products;
 
@@ -10,22 +24,24 @@ const getAllProducts = (req, res) => {
       const productName = product.name.toLowerCase();
       const queryName = name.toLowerCase();
       return productName.includes(queryName);
-      // return product.name.includes(name);
+      // return product.name.includes(name)
     });
     // console.log(filteredProduct, "name");
   }
 
   if (limit) {
     filteredProduct = filteredProduct.slice(0, parseInt(limit));
-    // console.log(filteredProduct, "limit");
+    // console.log(filteredProduct, "limit");.
   }
 
   const response = {
     success: true,
-    message: "Products Fetch Successfull",
-    [filteredProduct.length <= 1
-      ? "totalNumberOfProduct"
-      : "totalNumberOfProducts"]: filteredProduct.length,
+    message:
+      filteredProduct.length <= 1
+        ? "Product Fetch Successful"
+        : "Products Fetch Successful",
+    [filteredProduct.length <= 1 ? "totalProduct" : "totalProducts"]:
+      filteredProduct.length,
     data: {
       [filteredProduct.length <= 1 ? "product" : "products"]: filteredProduct,
     },
@@ -81,12 +97,10 @@ const createProduct = (req, res) => {
 
 // ---------------- Update Product----------------------------
 const updateProduct = (req, res) => {
-  const productId = req.params.id;
-  const data = req.body;
-  const { name } = data;
-  const productExists = products.find(
-    (product) => product.id === parseInt(productId)
-  );
+  const productId = parseInt(req.params.id);
+  const update = req.body;
+  const { name } = update;
+  const productExists = products.find((product) => product.id === productId);
 
   if (!productExists) {
     const response = {
@@ -99,7 +113,7 @@ const updateProduct = (req, res) => {
 
   const updatedProduct = {
     ...productExists,
-    ...data,
+    ...update,
   };
 
   const productIndex = products.findIndex(
@@ -110,6 +124,46 @@ const updateProduct = (req, res) => {
     success: true,
     message: `Product < ${name} > Updated Successfully`,
     data: { product: updatedProduct },
+  };
+
+  res.status(200).send(response);
+};
+
+// ------------------PATCH--------------------------------
+const partialUpdate = (req, res) => {
+  const productId = parseInt(req.params.id);
+  const updateBody = req.body;
+
+  const productExists = products.find((product) => product.id === productId);
+  if (!productExists) {
+    const response = {
+      success: false,
+      message: `Product Not Found For < ${req.body.name} >`,
+    };
+    return res.status(404).send(response);
+  }
+
+  let updatedProduct = {};
+
+  //Object--->> Array --->forEachArray
+  Object.keys(updateBody).forEach((key) => {
+    //Check to see which key-value pairs where updated
+    if (productExists.hasOwnProperty(key)) {
+      //Object property-key = request body property-key
+      productExists[key] = updateBody[key];
+      //Add key-value pairs that pass condition to new object (updatedProduct)
+      updatedProduct[key] = productExists[key];
+    }
+  });
+  // console.log(updatedProduct);
+
+  const response = {
+    success: true,
+    message: "Product updated successfully",
+    data: {
+      "updatedKeyValuePair(s)": updatedProduct,
+      product: productExists,
+    },
   };
 
   res.status(200).send(response);
@@ -138,7 +192,7 @@ const deleteProduct = (req, res) => {
 
   const response = {
     success: true,
-    message: `Product < ${productExists.name} > Deleted`,
+    message: `Product < ${productExists.name} > Deleted Successfully`,
   };
 
   res.status(200).send(response);
@@ -149,5 +203,6 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
+  partialUpdate,
   deleteProduct,
 };
